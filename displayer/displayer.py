@@ -4,89 +4,61 @@ import os
 import sys
 import glob
 import shutil
+import argparse
 
 
-def gen_html(s, newline=False):
+def gen_html(s):
     tag_begin = '<!DOCTYPE html>\n<html lang="en">'
     tag_end = '</html>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
 
     return tag_begin + s + tag_end
 
 
-def gen_head(newline=False):
+def gen_head():
     tag_begin = '<head>'
     tag_end = '</head>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
 
     contents = '<meta charset="UTF-8">\n<script src="./_miscs/lazysizes.min.js" async=""></script>'
 
     return tag_begin + contents + tag_end
 
 
-def gen_body(s, newline=False):
-    tag_begin = '<body>'
-    tag_end = '</body>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
-
-    return tag_begin + s + tag_end
+def gen_body(s):
+    return '<body>{}</body>'.format(s)
 
 
-def gen_img(fname, newline=False):
-    ret = '<img src="./_miscs/dummy.gif" data-src={} class="lazyload" />'.format(fname)
-
-    return ret
-
-
-def gen_table(s, newline=False):
-    tag_begin = '<table>'
-    tag_end = '</table>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
-
-    return tag_begin + s + tag_end
+def gen_img(fname, width):
+    if width:
+        return '<img src="./_miscs/dummy.gif" data-src={} class="lazyload" width="{}" />'.format(fname, width)
+    else:
+        return '<img src="./_miscs/dummy.gif" data-src={} class="lazyload" />'.format(fname)
 
 
-def gen_tr(s, newline=False):
-    tag_begin = '<tr>'
-    tag_end = '</tr>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
-
-    return tag_begin + s + tag_end
+def gen_table(s):
+    return '<table>{}</table>'.format(s)
 
 
-def gen_td(s, newline=False):
-    tag_begin = '<td>'
-    tag_end = '</td>'
-    if newline:
-        tag_begin += '\n'
-        tag_end = '\n' + tag_end + '\n'
-
-    return tag_begin + s + tag_end
+def gen_tr(s):
+    return '<tr>{}</tr>'.format(s)
 
 
-def gen_html_format(dname, fn_formats):
+def gen_td(s):
+    return '<td>{}</td>'.format(s)
+
+
+def gen_html_format(opts):
     ret = ''
 
     formated_fpaths = []
-    for fn_format in fn_formats:
-        formated_fpaths.append(sorted(list(glob.glob(os.path.join(dname, fn_format)))))
+    for fn_format in opts.format:
+        formated_fpaths.append(sorted(list(glob.glob(os.path.join(opts.dir, fn_format)))))
 
     for fpaths in zip(*formated_fpaths):
         imgs = ''
         names = ''
         for fpath in fpaths:
             fname = os.path.basename(fpath)
-            imgs += gen_td(gen_img(fname))
+            imgs += gen_td(gen_img(fname, opts.width))
             names += gen_td(fname)
         ret += gen_table(gen_tr(imgs) + gen_tr(names))
 
@@ -97,12 +69,12 @@ def gen_html_format(dname, fn_formats):
     return ret
 
 
-def gen_html_naive(dname):
+def gen_html_naive(opts):
     ret = ''
 
-    fnames = sorted(os.listdir(dname))
+    fnames = sorted(os.listdir(opts.dir))
     for fname in fnames:
-        img = gen_tr(gen_td(gen_img(fname)))
+        img = gen_tr(gen_td(gen_img(fname, opts.width)))
         name = gen_tr(gen_td(fname))
         ret += gen_table(img + name)
 
@@ -114,22 +86,21 @@ def gen_html_naive(dname):
 
 
 def displayer():
-    if len(sys.argv) < 2:
-        print('Specify a directory')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', '-d', type=str, required=True, help='Target directory')
+    parser.add_argument('--format', '-f', type=str, nargs='*', help='Filename format')
+    parser.add_argument('--width', '-w', type=int, help='Image width')
+    opts = parser.parse_args()
+
+    if opts.format:
+        script = gen_html_format(opts)
     else:
-        dname = sys.argv[1]
+        script = gen_html_naive(opts)
 
-    fn_formats = sys.argv[2:] if len(sys.argv) > 2 else None
-
-    if fn_formats:
-        script = gen_html_format(dname, fn_formats)
-    else:
-        script = gen_html_naive(dname)
-
-    with open(os.path.join(dname, '_displayer.html'), 'w') as f:
+    with open(os.path.join(opts.dir, '_displayer.html'), 'w') as f:
         f.write(script)
 
-    miscs = os.path.join(dname, '_miscs')
+    miscs = os.path.join(opts.dir, '_miscs')
     if not os.path.exists(miscs):
         os.makedirs(miscs)
 
