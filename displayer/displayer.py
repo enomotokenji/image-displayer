@@ -1,49 +1,64 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import glob
 import shutil
 import argparse
+import string
+
+misc_files = ['lazysizes.min.js', 'jquery-3.3.1.min.js', 'okzoom.min.js', 'dummy.gif']
 
 
 def gen_html(s):
-    tag_begin = '<!DOCTYPE html>\n<html lang="en">'
-    tag_end = '</html>'
-
-    return tag_begin + s + tag_end
+    return '<!DOCTYPE html>\n<html lang="en">\n{}\n</html>\n'.format(s)
 
 
-def gen_head():
-    tag_begin = '<head>'
-    tag_end = '</head>'
+def gen_head(opts):
+    ret = string.Template('''
+        <head>
+        <meta charset="UTF-8">
+        <script src="./_miscs/lazysizes.min.js"></script>
+        <script src="./_miscs/jquery-3.3.1.min.js"></script>
+        <script src="./_miscs/okzoom.min.js"></script>
+        <script>
+            $(function(){
+                $('img').okzoom({
+                    width: $size,
+                    height: $size,
+                    scaleWidth: $scale_width,
+                    round: true,
+                    border: "1px solid black",
+                    shadow: "0 0 5px #ffffff"
+                });
+            });
+        </script>
+        </head>
+        ''').safe_substitute(size=opts.width//2, scale_width=opts.width * 4)
 
-    contents = '<meta charset="UTF-8">\n<script src="./_miscs/lazysizes.min.js" async=""></script>'
-
-    return tag_begin + contents + tag_end
+    return ret
 
 
 def gen_body(s):
-    return '<body>{}</body>'.format(s)
+    return '<body>\n{}\n</body>\n'.format(s)
 
 
 def gen_img(fname, width):
     if width:
-        return '<img src="./_miscs/dummy.gif" data-src={} class="lazyload" width="{}" />'.format(fname, width)
+        return '<img src="./_miscs/dummy.gif" data-src={0} class="lazyload" width="{1}" />\n'.format(fname, width)
     else:
-        return '<img src="./_miscs/dummy.gif" data-src={} class="lazyload" />'.format(fname)
+        return '<img src="./_miscs/dummy.gif" data-src={0} class="lazyload" />\n'.format(fname)
 
 
 def gen_table(s):
-    return '<table>{}</table>'.format(s)
+    return '<table>{}</table>\n'.format(s)
 
 
 def gen_tr(s):
-    return '<tr>{}</tr>'.format(s)
+    return '<tr>{}</tr>\n'.format(s)
 
 
 def gen_td(s):
-    return '<td>{}</td>'.format(s)
+    return '<td>{}</td>\n'.format(s)
 
 
 def gen_html_format(opts):
@@ -63,7 +78,7 @@ def gen_html_format(opts):
         ret += gen_table(gen_tr(imgs) + gen_tr(names))
 
     ret = gen_body(ret)
-    head = gen_head()
+    head = gen_head(opts)
     ret = gen_html(head + ret)
 
     return ret
@@ -79,18 +94,43 @@ def gen_html_naive(opts):
         ret += gen_table(img + name)
 
     ret = gen_body(ret)
-    head = gen_head()
+    head = gen_head(opts)
     ret = gen_html(head + ret)
 
     return ret
 
 
-def displayer():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', '-d', type=str, required=True, help='Target directory')
-    parser.add_argument('--format', '-f', type=str, nargs='*', help='Filename format')
-    parser.add_argument('--width', '-w', type=int, help='Image width')
-    opts = parser.parse_args()
+def copy_miscs(opts):
+    miscs = os.path.join(opts.dir, '_miscs')
+    if not os.path.exists(miscs):
+        os.makedirs(miscs)
+
+    dname = os.path.dirname(__file__)
+    for file in misc_files:
+        shutil.copyfile(os.path.join(dname, file), os.path.join(miscs, file))
+
+
+class Dict2attr(object):
+    def __init__(self, opts):
+        self.opts = opts
+
+    def __getattr__(self, key):
+        if key in self.opts:
+            return self.opts[key]
+        else:
+            raise AttributeError(key)
+
+    def __getitem__(self, key):
+        return self.opts[key]
+
+
+def displayer(opts):
+    if isinstance(opts, argparse.Namespace):
+        pass
+    elif isinstance(opts, dict):
+        opts = Dict2attr(opts)
+    else:
+        raise NotImplementedError
 
     if opts.format:
         script = gen_html_format(opts)
@@ -100,10 +140,14 @@ def displayer():
     with open(os.path.join(opts.dir, '_displayer.html'), 'w') as f:
         f.write(script)
 
-    miscs = os.path.join(opts.dir, '_miscs')
-    if not os.path.exists(miscs):
-        os.makedirs(miscs)
+    copy_miscs(opts)
 
-    dir_ex = os.path.dirname(__file__)
-    shutil.copyfile(os.path.join(dir_ex, 'lazysizes.min.js'), os.path.join(miscs, 'lazysizes.min.js'))
-    shutil.copyfile(os.path.join(dir_ex, 'dummy.gif'), os.path.join(miscs, 'dummy.gif'))
+
+def displayer_commandline():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', '-d', type=str, required=True, help='Target directory')
+    parser.add_argument('--format', '-f', type=str, nargs='*', help='Filename format')
+    parser.add_argument('--width', '-w', type=int, default=128, help='Image width')
+    opts = parser.parse_args()
+
+    displayer(opts)
