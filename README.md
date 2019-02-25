@@ -11,15 +11,21 @@ pip install displayer
 
 ## Usage examples
 ```
+set -f
 displayer --dir path/to/target/dir/
+set +f
 ```
 
 ```
+set -f
 displayer --dir path/to/target/dir/ --format *.png --width 256
+set +f
 ```
 
 ```
+set -f
 displayer --dir path/to/target/dir/ --format *input.png *output.png *gt.png --width 256
+set +f
 ```
 
 ```
