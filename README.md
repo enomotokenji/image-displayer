@@ -1,4 +1,6 @@
 # image-displayer
+![Demo](supps/intro.gif)
+
 [![Downloads](https://pepy.tech/badge/displayer)](https://pepy.tech/project/displayer)
 ![license](https://img.shields.io/badge/license-MIT-red.svg)
 
