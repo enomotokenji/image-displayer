@@ -1,5 +1,5 @@
 # image-displayer
-[![pip install](https://img.shields.io/pypi/dm/displayer.svg?color=brightgreen)](https://pypi.org/project/displayer/)
+[![Downloads](https://pepy.tech/badge/displayer)](https://pepy.tech/project/displayer)
 ![license](https://img.shields.io/badge/license-MIT-red.svg)
 
 Almost personal library.
