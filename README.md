@@ -11,9 +11,7 @@ pip install displayer
 
 ## Usage examples
 ```
-set -f
 displayer --dir path/to/target/dir/
-set +f
 ```
 
 ```

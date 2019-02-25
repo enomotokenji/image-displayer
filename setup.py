@@ -4,7 +4,7 @@ from displayer import displayer
 
 setup(
     name='displayer',
-    version='0.4',
+    version='0.4.2',
     description='Batch display library for images in a directory',
     url='https://github.com/enomotokenji/image-displayer',
     author='Kenji Enomoto',
