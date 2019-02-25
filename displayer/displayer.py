@@ -72,7 +72,7 @@ def gen_html_format(opts):
         imgs = ''
         names = ''
         for fpath in fpaths:
-            fname = os.path.basename(fpath)
+            fname = os.path.relpath(fpath, start=opts.dir)
             imgs += gen_td(gen_img(fname, opts.width))
             names += gen_td(fname)
         ret += gen_table(gen_tr(imgs) + gen_tr(names))
